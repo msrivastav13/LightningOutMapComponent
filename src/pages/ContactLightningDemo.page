@@ -1,0 +1,54 @@
+<apex:page showHeader="false" sidebar="false" controller="ContactsMapController">
+	<apex:includeLightning />
+	<div>
+		<apex:form>
+		<div> 
+		    <select id="contactSelect" onchange="fetchselectedvalue(this);">
+		    </select>
+		</div>
+		<div id="lightning"/> 
+		<script>
+	     	cSelect = document.getElementById('contactSelect');
+	     	var contacts = [];
+			Visualforce.remoting.Manager.invokeAction(
+	                    '{!$RemoteAction.ContactsMapController.getContacts}',
+	           	function(result, event){
+	           		console.log(result);
+	                   if (event.status) {
+		                   	for (var i = 0, l = result.length; i < l; i++) {
+								var option = document.createElement('option');
+								var contact = { 'sobjectType': 'Contact','Name': result[i].Name,'Id':result[i].Id,'Location__Latitude__s':result[i].Location__Latitude__s,'Location__Longitude__s' :result[i].Location__Longitude__s };
+		                    	option.label = result[i].Name;
+		                    	option.value = result[i].Id;
+		                    	cSelect.appendChild(option);
+		                    	contacts.push(contact);
+							}   
+	                    }else{
+
+	                    }            
+	            },{escape: false}
+	        );
+	 		$Lightning.use("c:ContactMapVfApp", function() {
+	         	$Lightning.createComponent("c:ContactMap", {},
+	             "lightning",
+	             	function(cmp) {
+	             		console.log(contacts);
+	             	    var myExternalEvent;
+	                    myExternalEvent = $A.get("e.c:ContactsLoaded");
+	                    myExternalEvent.setParams({contacts:contacts});
+	                    myExternalEvent.fire();
+	            });
+	 		});
+
+	 		function fetchselectedvalue(){
+	 			var myExternalEvent;
+	 			var selectedindex = document.getElementById("contactSelect").selectedIndex;
+	 			var selectedcontact = contacts[selectedindex];
+	            myExternalEvent = $A.get("e.c:ContactSelected");
+	            myExternalEvent.setParams({contact:{ 'sobjectType': 'Contact','Name': selectedcontact.Name,'Id':selectedcontact.Id,'Location__Latitude__s':selectedcontact.Location__Latitude__s,'Location__Longitude__s' :selectedcontact.Location__Longitude__s }});
+	            myExternalEvent.fire();
+	 		}
+		    </script>
+	    </apex:form>
+    </div>
+</apex:page>
